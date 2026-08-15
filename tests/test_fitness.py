@@ -40,6 +40,61 @@ class ParsingTests(unittest.TestCase):
         self.assertIsNone(parse_check_in("Had a normal day.")["energy"])
 
 
+class SafetyTests(unittest.TestCase):
+    def test_common_high_risk_breathing_phrases_are_urgent(self):
+        from fitness import has_urgent_symptom
+
+        phrases = (
+            "I cannot breathe.",
+            "I can't breathe.",
+            "I can’t breathe.",
+            "I have shortness of breath.",
+            "I CANNOT BREATHE.",
+        )
+        for phrase in phrases:
+            with self.subTest(phrase=phrase):
+                self.assertTrue(has_urgent_symptom(phrase))
+
+    def test_ordinary_nonurgent_breath_references_do_not_trigger(self):
+        from fitness import has_urgent_symptom
+
+        phrases = (
+            "Breathing exercises helped me relax.",
+            "I practiced breath control during yoga.",
+            "My breathing felt normal throughout the walk.",
+        )
+        for phrase in phrases:
+            with self.subTest(phrase=phrase):
+                self.assertFalse(has_urgent_symptom(phrase))
+
+
+class PrivacyIgnoreTests(unittest.TestCase):
+    def test_sqlite_databases_and_sidecars_are_ignored(self):
+        names = (
+            "private.sqlite",
+            "private.sqlite-wal",
+            "private.sqlite-shm",
+            "private.sqlite3",
+            "private.sqlite3-wal",
+            "private.sqlite3-shm",
+            "private.db",
+            "private.db-wal",
+            "private.db-shm",
+        )
+        result = subprocess.run(
+            ["git", "check-ignore", "--no-index", "--stdin"],
+            cwd=REPO,
+            input="\n".join(names) + "\n",
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        ignored = set(result.stdout.splitlines())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(ignored, set(names))
+
+
 class CliTests(unittest.TestCase):
     def setUp(self):
         self.tempdir = tempfile.TemporaryDirectory()

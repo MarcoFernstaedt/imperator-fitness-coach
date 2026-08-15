@@ -91,7 +91,9 @@ def parse_timestamp(value: str | None) -> datetime:
 def has_urgent_symptom(text: str) -> bool:
     patterns = (
         r"\bchest pain\b",
-        r"\b(?:trouble|difficulty|cannot|can't) breathing\b",
+        r"\b(?:trouble|difficulty) breathing\b",
+        r"\b(?:cannot|can['’]t) breathe\b",
+        r"\bshortness of breath\b",
         r"\bfaint(?:ed|ing)?\b",
         r"\bsevere bleeding\b",
         r"\bface droop(?:ing)?\b",

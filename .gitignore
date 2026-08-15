@@ -13,10 +13,14 @@ htmlcov/
 
 # Sensitive local databases and exports
 *.sqlite
-*.sqlite3
 *.sqlite-wal
 *.sqlite-shm
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
 *.db
+*.db-wal
+*.db-shm
 fitness-export*.json
 
 # Local secrets and editor/OS files
