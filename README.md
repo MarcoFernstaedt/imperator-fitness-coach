@@ -1,90 +1,136 @@
 # Imperator Fitness Coach
 
-A dependency-free, local Python CLI for recording fitness check-ins, reviewing recent source text, producing conservative summaries, exporting JSON, and deleting one exact entry with explicit confirmation.
+A dependency-free, private Python CLI for recording fitness check-ins, listing source entries, producing conservative summaries, exporting JSON, and safely deleting an exact entry with explicit confirmation.
 
-## Safety and privacy boundaries
+---
 
-- This tool is a descriptive personal record, **not a diagnosis, treatment service, or substitute for medical care**.
-- It only extracts explicitly stated, narrow fields and does not infer conditions or causes.
-- Recognized emergency-language patterns produce an urgent prompt to contact local emergency services; they do not provide treatment advice. Pattern matching is intentionally limited and cannot detect every emergency.
-- Health entries remain in a local SQLite database. They are sensitive: do not commit, paste, sync, or share the database or exports unintentionally.
-- The database directory is created with mode `0700` and the database with mode `0600`. Host backups, administrator access, malware, and copying an export can bypass these local permissions; full-disk encryption and careful backup handling remain the user's responsibility.
+## Value and Features
+
+- **Private by default:** All data stays local in a strict-mode SQLite database; nothing leaves your device unless you export it.
+- **No runtime dependencies:** The CLI uses only the Python standard library and makes no network or third-party service calls. GitHub CI uses the standard checkout and Python setup actions.
+- **Deterministic parsing:** Extracts only explicit fields via regex/phrases—not fuzzy inference.
+- **CLI-first:** Simple interface for quick entry, review, and export.
+- **Strong safety rails:** Emergency-language only triggers local professional help prompt; deletion requires exact ID and `--confirm`.
+
+---
+
+## Features Overview
+
+- Log a parsed fitness check-in with optional timestamp and details (activity, duration, energy, soreness, sleep, hydration, notes)
+- List recent entries from a time window
+- Summarize observations for trends (requires 3+ points)
+- Export recorded data as machine-readable JSON
+- Delete one entry by exact ID only (with forced confirmation)
+- No bulk deletion, no unsolicited advice, no data inference
 
 ## Requirements
 
 - Python 3.13 is verified. Python 3.11+ with SQLite 3.37+ is expected because the schema uses SQLite `STRICT` tables and JSON validation.
-- No third-party packages are required.
+- No third-party Python packages are required.
 
-Run commands from this repository:
+---
 
+## Architecture and Flow
+
+**How it works behind the scenes:**
+
+1. **CLI entry:** `python3 fitness.py [command]` (see usage)
+2. **Parsing:** Static regex/phrase-matching to extract only explicit fields (activity, energy, soreness, sleep, food/hydration, notes)
+3. **Safety check:** Emergency-language scanner detects critical symptoms ("can't breathe", "chest pain", certain stroke symptoms, etc.)—shows an urgent prompt to seek local professional help if matched (does not provide diagnosis/treatment or cover all emergencies)
+4. **Local storage:** All data is written to a local SQLite database (`STRICT` table, WAL journaling, mode 0700/0600)
+5. **Data management:** Entries can be listed, summarized, exported, or deleted—each via CLI
+6. **Permanent deletion:** Only exact, confirmed IDs accepted—no partial matching or bulk delete ever
+
+### Mermaid Flowchart
+```mermaid
+flowchart TD
+    Input[Log check-in via CLI]
+    Parse[Parse explicit fields]
+    Safety[Emergency-language scan]
+    Store[Insert into local SQLite DB (STRICT, WAL)]
+    Warn[Show URGENT prompt (if triggered)]
+    List[List entries]
+    Summarize[Summarize trends]
+    Export[Export all as JSON]
+    Delete[Delete 1 entry by full ID w/ confirm]
+
+    Input --> Parse --> Safety --> Store
+    Safety -- if critical --> Warn
+    Store --> List
+    Store --> Summarize
+    Store --> Export
+    Store --> Delete
+```
+
+### Accessible Step-by-Step Flow
+1. User enters check-in at CLI
+2. Text is parsed using regex/static phrase matching (no ML, no inference)
+3. Emergency-language phrases are checked; trigger shows a warning to seek local help (no treatment provided, limited coverage)
+4. Parsed and source text is stored locally to SQLite (STRICT, WAL, safe permissions)
+5. Entries can be listed, summarized, exported, or deleted on command
+6. Summaries require at least 3 points, only describe explicit directional energy, never infer causes
+7. Deletion requires full exact ID and --confirm; never deletes partial/wildcards, never bulk
+
+---
+
+## Safety and Privacy Boundaries
+
+- This tool is a descriptive personal record, **not a diagnosis, treatment service, or substitute for medical care**.
+- Only explicitly stated, narrow fields are extracted; does **not** infer conditions or causes.
+- Recognized emergency-language patterns produce an urgent prompt to contact local emergency services, never treatment advice. Pattern matching is intentionally limited and cannot detect every emergency.
+- Health entries are stored in a local SQLite database, directory-mode `0700`, file `0600`. Database and exports may be exposed by backups, malware, or improper sharing—**do not commit, paste, sync, or share unintentionally**.
+- Database permissions are best-effort local; OS, admin, and backup hygiene remain user's responsibility.
+
+---
+
+## Usage and Commands
+
+**See all options:**
 ```sh
 python3 fitness.py --help
 ```
 
-## Data path
-
-The default database is:
-
-```text
-~/.hermes/private/fitness/fitness.sqlite3
-```
-
-For tests, smoke checks, or an alternate private location, set `FITNESS_DB_PATH`:
-
-```sh
-FITNESS_DB_PATH=/private/path/fitness.sqlite3 python3 fitness.py recent --days 7
-```
-
-The application initializes the strict schema automatically, enables foreign keys, and uses SQLite WAL mode.
-
-## Usage
-
-Log a check-in. `--at` is optional; when supplied, it must be an ISO-8601 timestamp with a UTC or local offset:
-
+**Log a check-in with optional timestamp:**
 ```sh
 python3 fitness.py log \
   --text "Walked 20 minutes. Energy 3/5." \
   --at "2026-08-14T18:30:00-07:00"
 ```
 
-Read exact source check-ins from the last seven days:
-
+**List check-ins (last 7 days):**
 ```sh
 python3 fitness.py recent --days 7
 ```
 
-Produce conservative observations. Directional energy wording requires at least three qualifying check-ins:
-
+**Summarize observations (needs 3+ check-ins):**
 ```sh
 python3 fitness.py summary --days 30
 ```
 
-Export all entries as parseable JSON:
-
+**Export all to JSON:**
 ```sh
 python3 fitness.py export-json > fitness-export.json
 ```
+Treat the export as private data—remove securely if no longer needed.
 
-Treat that export as private health data and remove it securely when no longer needed.
-
-Delete exactly one entry. Copy the full ID from `recent` or `export-json`; omission of the literal `--confirm` flag refuses deletion. Unknown and partial IDs are not deleted:
-
+**Delete one entry by ID and confirm:**
 ```sh
 python3 fitness.py delete-entry --id FULL_ENTRY_ID --confirm
 ```
+No partial or unknown IDs are deleted. The current implementation has no bulk-delete command. Deletion is permanent unless a backup exists.
 
-There is no bulk-delete command.
+---
 
-## Verification
+## Data Path and Storage
 
-The governing test command is:
-
+- Default DB: `~/.hermes/private/fitness/fitness.sqlite3`
+- For tests or alt locations, set `FITNESS_DB_PATH`:
 ```sh
-python3 -m py_compile fitness.py tests/test_fitness.py
-python3 -m unittest discover -s tests -v
+FITNESS_DB_PATH=/custom/fitness.sqlite3 python3 fitness.py recent --days 7
 ```
+- The application enables WAL mode and uses `STRICT` typing, non-empty source-text validation, valid-JSON validation, and an urgent flag constrained to `0` or `1`.
 
-To inspect a database directly without changing it:
+To inspect a database without changing it:
 
 ```sh
 FITNESS_DB_PATH=/private/path/fitness.sqlite3 python3 - <<'PY'
@@ -95,25 +141,59 @@ print(con.execute("PRAGMA integrity_check").fetchone()[0])
 PY
 ```
 
-## Backup and rollback
+---
 
-1. Stop commands that are writing to the database.
-2. Back up SQLite safely with Python's backup API rather than copying only the main file while WAL mode may be active:
+## Verification and Test Strategy
 
-   ```sh
-   FITNESS_DB_PATH=/private/path/fitness.sqlite3 FITNESS_BACKUP_PATH=/private/path/fitness-backup.sqlite3 python3 - <<'PY'
-   import os, sqlite3
-   with sqlite3.connect(os.environ["FITNESS_DB_PATH"]) as source:
-       with sqlite3.connect(os.environ["FITNESS_BACKUP_PATH"]) as target:
-           source.backup(target)
-   PY
-   ```
+- All code is governed by in-tree Python unit tests, run locally on Python 3.13 and in CI on Python 3.11 and 3.13
+- Test coverage includes CLI behaviour, parsing, database safety, permission rails, deletion, and regression cases
+- The CLI uses no network or third-party services; tests use temporary local SQLite files
+- Verification commands (from repo root):
+```sh
+python3 -m py_compile fitness.py tests/test_fitness.py
+python3 -m unittest discover -s tests -v
+```
 
-3. To roll back code, revert the relevant Git commit (preferred) or check out a previously reviewed commit.
-4. To restore data, preserve the current database first, then replace it with a verified backup while no process is using it. Re-run both SQLite checks above after restoration.
+---
 
-Deletion is permanent unless a backup exists.
+## Backup, Rollback, and Maintenance
+
+**Backup:**
+1. Stop all commands using the database
+2. Use Python's backup API for safe copying:
+```sh
+FITNESS_DB_PATH=/private.sqlite3 FITNESS_BACKUP_PATH=/backup.sqlite3 python3 - <<'PY'
+import os, sqlite3
+with sqlite3.connect(os.environ["FITNESS_DB_PATH"]) as src:
+    with sqlite3.connect(os.environ["FITNESS_BACKUP_PATH"]) as dst:
+        src.backup(dst)
+PY
+```
+
+**Rollback:**
+- Revert code via git; restore backed up DB if needed (replace only when no process is using it; verify with integrity check)
+- Future schema changes require a reviewed migration, a verified backup, and a tested rollback path
+
+---
+
+## Troubleshooting
+
+- Errors on startup: verify Python/SQLite version
+- Parsing looks odd: refer to parsing logic and unit tests
+- Path/data not found: check `FITNESS_DB_PATH`, paths, permissions
+- Test issues: always run the full suite; do not publish failing/unverified code
+
+---
+
+## Maintenance and Extension Points
+
+- Entrypoint: `fitness.py` (modular, single file)
+- Extend fields: update regex parser, schema, tests
+- Update safety rails and emergency-language matchers only with caution, medical input, and added tests—never remove deletion confirmation
+- All new features must retain strict privacy, local storage, and permission boundaries
+
+---
 
 ## Deferred UI
 
-A graphical user interface is intentionally deferred until Intelligence Hub work resumes. The CLI and its local data contract are the current supported surface.
+A graphical interface is deferred. This CLI and local contract are currently maintained and supported. Contributions should follow all safety, privacy, and testing rails as detailed above.
