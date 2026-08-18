@@ -1,6 +1,24 @@
 # Imperator Fitness Coach
 
-A dependency-free, private Python CLI for recording fitness check-ins, listing source entries, producing conservative summaries, exporting JSON, and safely deleting an exact entry with explicit confirmation.
+A dependency free, private Python CLI for recording fitness check ins, listing source entries, producing conservative summaries, exporting JSON, and safely deleting one exact entry with explicit confirmation.
+
+## Product and Integration Boundary
+
+Imperator Fitness Coach is a standalone local fitness engine and command line interface. It is not a Hermes plugin.
+
+### Current implemented capability
+
+The public repository currently owns deterministic check in parsing, the private local SQLite storage contract, recent entry listing, conservative summaries, JSON export, urgent phrase warnings, and exact confirmed deletion.
+
+The active Hermes integration is an external private skill named `imperator-fitness-check-in`. The skill invokes this CLI. This repository does not contain, install, configure, or publish that skill.
+
+### Planned engine capability
+
+The public engine should own structured programs, workout session selection, exercise results, progression rules, personal records, and training summaries. These capabilities are planned and are not implemented by the current schema, CLI, or tests.
+
+Private workout history, health information, database files, exports, and program files stay under `~/.hermes/private/fitness` and must never be committed.
+
+A future native Dashboard plugin is optional and deferred. If built, it must be a thin interface over this engine. It must not duplicate fitness rules or storage.
 
 ---
 
