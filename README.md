@@ -16,6 +16,8 @@ The active Hermes integration is an external private skill named `imperator-fitn
 
 The public engine should own structured programs, workout session selection, exercise results, progression rules, personal records, and training summaries. These capabilities are planned and are not implemented by the current schema, CLI, or tests.
 
+The complete product architecture, supported training modes, calibration contract, goals, accessible graph requirements, delivery sequence, and deferred WHOOP integration are defined in [ROADMAP.md](ROADMAP.md).
+
 Private workout history, health information, database files, exports, and program files stay under `~/.hermes/private/fitness` and must never be committed.
 
 A future native Dashboard plugin is optional and deferred. If built, it must be a thin interface over this engine. It must not duplicate fitness rules or storage.
