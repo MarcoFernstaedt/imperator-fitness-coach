@@ -107,11 +107,13 @@ Exports use a documented schema version and retain provenance. Private databases
 
 The CLI remains the primary supported interface while the structured engine is built. The private `imperator-fitness-check-in` Hermes skill may invoke the CLI but is not contained in this repository.
 
-### Dashboard and visual progress
+### Local report, Dashboard, and visual progress
 
-A standalone web application is not justified yet. It would add browser security, authentication, privacy, dependency, and maintenance obligations before structured longitudinal data exists.
+A standalone web application is not justified. It would add browser security, authentication, privacy, dependency, and maintenance obligations without improving the private single user workflow.
 
-After the engine and query contract are stable, an optional native Hermes Dashboard plugin may provide visual history and workout controls. It must remain local, inherit host protection, and call the engine rather than duplicate logic or storage.
+After the engine and query contract are stable, the repository will generate a self contained accessible HTML progress report as a local file. This report satisfies the public repository's visual graph requirement without running a server or duplicating engine logic.
+
+A native Hermes Dashboard plugin remains optional, deferred, and outside this repository. If separately approved later, it must remain local, inherit host protection, and call the engine rather than duplicate logic or storage.
 
 ### MCP and API
 
@@ -193,17 +195,17 @@ Implement versioned progression policies, user accepted recommendations, goal st
 
 Add versioned full export, migration verification, dependency aware exact deletion, backup, and restore validation.
 
-### Phase 8: Add an accessible Dashboard interface if justified
+### Phase 8: Add an accessible local HTML progress report
 
-Implement only after the engine query contract and longitudinal data are stable. Verify complete equivalence between charts, summaries, tables, and source records.
+Generate a self contained local file only after the engine query contract and longitudinal data are stable. Verify complete equivalence between charts, summaries, tables, and source records. Do not add a web server or Dashboard plugin in this repository.
 
 ### Phase 9: Add WHOOP through an optional adapter
 
-Keep provider failure isolated and preserve offline operation.
+Keep provider failure isolated and preserve offline operation. Live OAuth and synchronization require the separate approval and confidential client gates defined in the implementation contract.
 
-### Phase 10: Consider MCP or an API only for a proven consumer
+### Phase 10: Final product acceptance
 
-Do not add a transport merely because one is available.
+Run complete functional, migration, privacy, security, accessibility, and runtime acceptance for the public repository. MCP, an HTTP API, and a native Dashboard plugin remain outside this repository unless a later proven consumer and separate approval justify them.
 
 ## Explicit Non Goals
 
